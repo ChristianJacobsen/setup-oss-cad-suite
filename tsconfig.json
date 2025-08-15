@@ -1,12 +1,11 @@
 {
-  "extends": "@total-typescript/tsconfig/tsc/no-dom/library",
-  "compilerOptions": {
-    "module": "commonjs",
-    "outDir": "lib",
-    "rootDir": "src",
-    "target": "es2015",
-    "verbatimModuleSyntax": false
-  },
-  "include": ["src"],
-  "exclude": ["dist", "lib"]
+	"extends": "@total-typescript/tsconfig/tsc/no-dom/library",
+	"compilerOptions": {
+		"module": "commonjs",
+		"outDir": "lib",
+		"rootDir": "src",
+		"verbatimModuleSyntax": false
+	},
+	"include": ["src"],
+	"exclude": ["dist", "lib"]
 }

@@ -1,11 +1,11 @@
-import * as cache  from '@actions/cache'
-import * as core   from '@actions/core'
-import * as exec   from '@actions/exec'
+import * as cache from '@actions/cache'
+import * as core from '@actions/core'
+import * as exec from '@actions/exec'
 import * as github from '@actions/github'
-import * as io     from '@actions/io'
-import * as tc     from '@actions/tool-cache'
+import * as io from '@actions/io'
+import * as tc from '@actions/tool-cache'
 import { GitHub } from '@actions/github/lib/utils'
-import { Octokit } from '@octokit/core'
+import type { Octokit } from '@octokit/core'
 import type { Api } from '@octokit/plugin-rest-endpoint-methods/dist-types/types'
 
 const REPO_META = {
@@ -14,7 +14,10 @@ const REPO_META = {
 }
 
 async function getReleaseURL(
-	octokit: Octokit & Api, platform = 'linux', arch = 'x64', version?: string
+	octokit: Octokit & Api,
+	platform = 'linux',
+	arch = 'x64',
+	version?: string,
 ): Promise<[string, string]> {
 	const RELEASE_PREFIX = `oss-cad-suite-${platform}-${arch}`
 
@@ -24,7 +27,7 @@ async function getReleaseURL(
 			const resp = await octokit.rest.repos.getReleaseByTag({
 				owner: REPO_META.owner,
 				repo: REPO_META.repo,
-				tag: version
+				tag: version,
 			})
 
 			// Check to make sure we got an OK
@@ -35,14 +38,14 @@ async function getReleaseURL(
 			core.debug(`Found OSS CAD Suite release for ${version}`)
 
 			// Return the release data
-			return [ resp.data ]
+			return [resp.data]
 		}
 
 		// Otherwise the latest list of releases
 		const resp = await octokit.rest.repos.listReleases({
 			owner: REPO_META.owner,
 			repo: REPO_META.repo,
-			page: 1
+			page: 1,
 		})
 
 		// Check to make sure we got an OK
@@ -61,9 +64,9 @@ async function getReleaseURL(
 
 	for (const release of releases) {
 		// Get the first matching release
-		const asset = release.assets.filter(
-			asset => asset.name.startsWith(RELEASE_PREFIX)
-		).shift()
+		const asset = release.assets
+			.filter((asset) => asset.name.startsWith(RELEASE_PREFIX))
+			.shift()
 
 		// If we have the asset, then try to get it
 		if (asset) {
@@ -76,47 +79,56 @@ async function getReleaseURL(
 	throw Error(`Unable to get OSS CAD Suite release for ${platform}-${arch}`)
 }
 
-function _validate(os: NodeJS.Platform , arch: NodeJS.Architecture) {
+function _validate(os: NodeJS.Platform, arch: NodeJS.Architecture) {
 	if (os === 'linux') {
-		const is_arm = ((arch === 'arm64') || (arch === 'arm'))
-		if ((!is_arm) && (arch !== 'x64')) {
-			throw Error(`Unsupported architecture '${arch}' for linux, must be either arm, arm64, or x64`)
+		const is_arm = arch === 'arm64' || arch === 'arm'
+		if (!is_arm && arch !== 'x64') {
+			throw Error(
+				`Unsupported architecture '${arch}' for linux, must be either arm, arm64, or x64`,
+			)
 		}
 	} else if (os === 'darwin') {
-		if ((arch !== 'arm64') && (arch !== 'x64')) {
-			throw Error(`Unsupported architecture '${arch}' for darwin, must be either arm64 or x64`)
+		if (arch !== 'arm64' && arch !== 'x64') {
+			throw Error(
+				`Unsupported architecture '${arch}' for darwin, must be either arm64 or x64`,
+			)
 		}
 	} else if (os === 'win32') {
 		if (arch !== 'x64') {
 			throw Error(`Unsupported architecture '${arch}' for windows, must be x64`)
 		}
 	} else {
-		throw Error(`Unsupported Operating System '${os}', must be either linux or darwin`)
+		throw Error(
+			`Unsupported Operating System '${os}', must be either linux or darwin`,
+		)
 	}
 }
 
 function isPosix(os: NodeJS.Platform) {
-	return ((os === 'linux') || (os === 'darwin'))
+	return os === 'linux' || os === 'darwin'
 }
 
-async function extractPackage(pkg_file: string, pkg_dir: string, os: NodeJS.Platform) {
+async function extractPackage(
+	pkg_file: string,
+	pkg_dir: string,
+	os: NodeJS.Platform,
+) {
 	core.info(`Extracting ${pkg_file} to ${pkg_dir}`)
 	let suite_path = undefined
 	if (isPosix(os)) {
 		core.debug('System is a posix-like, using extract tar')
-		suite_path = await tc.extractTar(
-			pkg_file, pkg_dir,
-			['xz', '--strip-components=1']
-		)
+		suite_path = await tc.extractTar(pkg_file, pkg_dir, [
+			'xz',
+			'--strip-components=1',
+		])
 	} else {
 		core.debug('Assuming system is windows, trying to run installer')
 		suite_path = pkg_dir
-		await exec.exec(
-			pkg_file, [
-				// Because we can't strip out the root we have to just extract over the dir
-				`-o${process.env.RUNNER_TEMP}`, '-y'
-			]
-		)
+		await exec.exec(pkg_file, [
+			// Because we can't strip out the root we have to just extract over the dir
+			`-o${process.env.RUNNER_TEMP}`,
+			'-y',
+		])
 	}
 	return suite_path
 }
@@ -136,7 +148,9 @@ function setupEnvironment(suite_path: string) {
 async function main(): Promise<void> {
 	core.info('Setting up oss-cad-suite')
 	try {
-		const pkg_dir = core.toPlatformPath(`${process.env.RUNNER_TEMP}/oss-cad-suite`)
+		const pkg_dir = core.toPlatformPath(
+			`${process.env.RUNNER_TEMP}/oss-cad-suite`,
+		)
 		const os = process.platform
 		const arch = process.arch
 		const tag = core.getInput('version')
@@ -205,7 +219,9 @@ async function main(): Promise<void> {
 				}
 
 				// If not, fall through to the download routine
-				core.info(`Did not find cached build for OSS CAD Suite on ${arch}, downloading`)
+				core.info(
+					`Did not find cached build for OSS CAD Suite on ${arch}, downloading`,
+				)
 			}
 
 			// Get the URL for the release
@@ -213,7 +229,7 @@ async function main(): Promise<void> {
 				octokit,
 				os === 'win32' ? 'windows' : os,
 				arch,
-				tag === '' ? undefined : tag
+				tag === '' ? undefined : tag,
 			)
 
 			await io.mkdirP(pkg_dir)
@@ -223,21 +239,22 @@ async function main(): Promise<void> {
 				release_url,
 				core.toPlatformPath(`${process.env.RUNNER_TEMP}/${pkg_name}`),
 				// If we have a token, use it
-				token === '' ? undefined : token
+				token === '' ? undefined : token,
 			)
 
 			const extract_dir = await extractPackage(pkg_file, pkg_dir, os)
 
 			// If we are using the cache, and the cache failed, try to cache it this time
 			if (use_cache) {
-				core.info(`Attempting to cache OSS CAD Suite build ${version} for ${arch}`)
-				const cache_id = await cache.saveCache([ extract_dir ], final_cache_key)
+				core.info(
+					`Attempting to cache OSS CAD Suite build ${version} for ${arch}`,
+				)
+				const cache_id = await cache.saveCache([extract_dir], final_cache_key)
 				core.info(`Successfully cached (cache id: ${cache_id})`)
 			}
 
 			return extract_dir
 		})()
-
 
 		setupEnvironment(suite_path)
 

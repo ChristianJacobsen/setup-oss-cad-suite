@@ -7,11 +7,9 @@
 			"group": "build",
 			"presentation": {
 				"reveal": "never",
-				"panel": "dedicated",
+				"panel": "dedicated"
 			},
-			"problemMatcher": [
-				"$tsc"
-			]
+			"problemMatcher": ["$tsc"]
 		}
 	]
 }
