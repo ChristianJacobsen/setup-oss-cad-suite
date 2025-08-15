@@ -1,13 +1,12 @@
-import * as core   from '@actions/core'
 import * as cache  from '@actions/cache'
-import * as io     from '@actions/io'
-import * as tc     from '@actions/tool-cache'
+import * as core   from '@actions/core'
 import * as exec   from '@actions/exec'
 import * as github from '@actions/github'
+import * as io     from '@actions/io'
+import * as tc     from '@actions/tool-cache'
 import { GitHub } from '@actions/github/lib/utils'
 import { Octokit } from '@octokit/core'
-import { Api } from '@octokit/plugin-rest-endpoint-methods/dist-types/types'
-
+import type { Api } from '@octokit/plugin-rest-endpoint-methods/dist-types/types'
 
 const REPO_META = {
 	owner: 'YosysHQ',
